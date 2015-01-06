@@ -1,5 +1,7 @@
 # WORK IN PROGRESS
 
+[![npm version](https://badge.fury.io/js/sbagen.svg)](http://badge.fury.io/js/sbagen)
+
 an sbagen work-alike for HTML5, nodejs, & CLI that uses an event-system so you can easily hook into speed changes & do video/audio.
 
 ## todo
