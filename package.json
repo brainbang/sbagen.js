@@ -23,7 +23,7 @@
     "test": "mocha"
   },
   "bin": {
-    "sbagen": "cli.js"
+    "sbagenjs": "cli.js"
   },
   "devDependencies": {
     "browserify": "^8.0.3",
