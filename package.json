@@ -1,6 +1,6 @@
 {
   "name": "sbagen",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "brainwave synchronization library patterned after sbagen",
   "author": "David Konsumer <konsumer@jetboystudio.com>",
   "keywords": [
