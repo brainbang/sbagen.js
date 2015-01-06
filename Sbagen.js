@@ -4,8 +4,7 @@ var trimArray = require('./utils/trimArray.js');
 var removeBlank = require('./utils/removeBlank.js');
 
 var Sbagen = module.exports = function(sbagen){
-	var self = this;
-	self.sbagen = sbagen;
+	this.sbagen = sbagen;
 };
 
 Sbagen.prototype = EventEmitter.prototype;
