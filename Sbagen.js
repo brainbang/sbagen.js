@@ -5,6 +5,8 @@ var removeBlank = require('./utils/removeBlank.js');
 
 var Sbagen = module.exports = function(sbagen){
 	this.sbagen = sbagen;
+  this.timers = [];
+  this.sequece = [];
 };
 
 Sbagen.prototype = EventEmitter.prototype;
@@ -96,11 +98,23 @@ Sbagen.prototype.parse = function(){
 };
 
 /**
+ * Clear all sequencer timers
+ * @return {[type]} [description]
+ */
+Sbagen.prototype.clear = function(){
+  this.timers.forEach(function(timer){
+    clearTimeout(timer);
+  });
+  this.timers = [];
+};
+
+/**
  * Playback this.sequence as emits at proper time
  * @return {[type]} [description]
  */
 Sbagen.prototype.play = function(){
 	var self = this;
+  self.clear();
 	self.emit('play');
 	self.playing = true;
 	self.timers = self.sequence.map(function(op, i){
@@ -118,7 +132,5 @@ Sbagen.prototype.stop = function(){
 	var self = this;
 	self.emit('stop');
 	self.playing = false;
-  self.timers.forEach(function(timer){
-    clearTimeout(timer);
-  });
+  self.clear();
 };
