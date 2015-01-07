@@ -30,7 +30,7 @@ Sbagen.prototype.addTime = function(time, add, startOfDay){
     if (newTime >= time){
       out=Math.floor((newTime-time) / 1000);
     }else{
-      out=Math.floor(((newTime-time) + (8.64e+7) ) / 1000);;
+      out=Math.floor(((newTime-time) + (8.64e+7) ) / 1000);
     }
 	}else{
 		out=Math.floor(offset / 1000);
