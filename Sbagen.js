@@ -46,7 +46,7 @@ Sbagen.prototype.addTime = function(time, add, startOfDay){
  */
 Sbagen.prototype.parse = function(){
   var self = this;
-  var code = this.sbagen.replace(/##.+/g, '').split('\n').map(trimArray);
+  var code = this.sbagen.replace(/##.+/g, '').split(/[\n\r]/).map(trimArray);
   var ops = {};
   var seq = [];
 
@@ -54,9 +54,9 @@ Sbagen.prototype.parse = function(){
   for (var c in code){
     if (code[c].search(/.+: /) === 0){
       var op = code[c].split(/[: ]/).map(trimArray);
-      ops[ op[0] ] = op.slice(1).filter(removeBlank)
+      ops[ op[0] ] = op.slice(1).filter(removeBlank);
     }else if(code[c] !== ''){
-      seq.push(code[c].split(' ').map(trimArray));
+      seq.push(code[c].split(' ').map(trimArray).filter(removeBlank));
     }
   }
 
