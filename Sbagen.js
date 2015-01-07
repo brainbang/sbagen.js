@@ -11,28 +11,30 @@ Sbagen.prototype = EventEmitter.prototype;
 
 /**
  * get offset time from `time`
- * @param {Number} time        Time to start with
+ * @param {Number} time        Time to start with (datestamp in ms)
  * @param {String} add         Future time (HH:MM:SS or HH:MM)
  * @param {Boolean} startOfDay Is `add` a daytime or offset from `time`?
- * @return {Number}            The ms offset
+ * @return {Number}            The seconds offset
  */
 Sbagen.prototype.addTime = function(time, add, startOfDay){
+  //console.log('starting with ' + new Date(time) + ' adding ' + add);
+  var out;
 	if (add.length === 5) add = add + ':00';
-	var d = new Date(time);
-	var n = new Date(time);
 	var t = add.split(':').map(Number);
+  var offset = (t[0] * 3600000) + (t[1] * 60000) + (t[2] * 1000);
 	if (startOfDay){
-		d.setHours(0);
-		d.setMinutes(0);
-		d.setSeconds(0);
+    var d = new Date(time); d.setHours(0); d.setMinutes(0); d.setSeconds(0);
+    var newTime = offset + d.getTime();
+    if (newTime >= time){
+      out=Math.floor((newTime-time) / 1000);
+    }else{
+      out=Math.floor(((newTime-time) + (8.64e+7) ) / 1000);;
+    }
+	}else{
+		out=Math.floor(offset / 1000);
 	}
-	d.setHours( d.getHours() + t[0] );
-	d.setMinutes( d.getMinutes() + t[1] );
-	d.setSeconds( d.getSeconds() + t[2] );
-	if (startOfDay && d.getTime() < n.getTime()){
-		d.setDate( d.getDate() + 1 );
-	}
-	return d.getMilliseconds() - n.getMilliseconds();
+  //console.log('got', out);
+  return out;
 };
 
 /**
@@ -41,57 +43,56 @@ Sbagen.prototype.addTime = function(time, add, startOfDay){
  * @param  {String} sbagen [description]
  */
 Sbagen.prototype.parse = function(){
-	var self = this;
-	var code = this.sbagen.replace(/##.+/g, '').split('\n').map(trimArray);
-	var ops = {};
-	var seq = [];
+  var self = this;
+  var code = this.sbagen.replace(/##.+/g, '').split('\n').map(trimArray);
+  var ops = {};
+  var seq = [];
 
-	// pull out ops & seq
-	for (var c in code){
-		if (code[c].search(/.+: /) === 0){
-			var op = code[c].split(/[: ]/).map(trimArray);
-			ops[ op[0] ] = op.slice(1).filter(removeBlank)
-			// .map(function(o){ return o.split('/'); });
-		}else if(code[c] !== ''){
-			seq.push(code[c].split(' ').map(trimArray));
-		}
-	}
+  // pull out ops & seq
+  for (var c in code){
+    if (code[c].search(/.+: /) === 0){
+      var op = code[c].split(/[: ]/).map(trimArray);
+      ops[ op[0] ] = op.slice(1).filter(removeBlank)
+    }else if(code[c] !== ''){
+      seq.push(code[c].split(' ').map(trimArray));
+    }
+  }
 
-	// console.log(ops, seq);
+  var now = (new Date()).getTime();
+  var lastTime = 0;
 
-	var now = (new Date()).getTime();
-	var lastTime = now;
+  self.sequence = seq.map(function(s){
+    var addTime = 0;
 
-	// get times that things happen
-	// TODO: figure out 'sway:' (Alcohol)
-	// TODO: empty times need a look (Adrenaline)
-	self.sequence = seq.map(function(s){
-		if (s[0].indexOf('NOW') === 0){
-			// NOW
-			if (s[0] === 'NOW'){
-				s[0] = 0;
-			}
-			// NOW+00:00:10
-			else {
-				s[0] = self.addTime(now, s[0].substr(4));
-			}
-			lastTime = s[0] + now;
-		}else{
-			// +00:20
-			if (s[0][0] === '+'){
-				s[0] = self.addTime(lastTime, s[0].substr(1));
-			}
-			// 15:00
-			else{
-				s[0] = self.addTime(now, s[0], true);
-				lastTime = s[0];
-			}
-		}
-		s[1] = ops[s[1]];
-		return s;
-	});
+    var parsed_ops=[];
+    s.slice(1).forEach(function(op){
+      parsed_ops=parsed_ops.concat(ops[op] ? ops[op] : op);
+    });
 
-	this.emit('parsed', self.sequence);
+    if (s[0].indexOf('NOW') === 0){
+      addTime = 0;
+      // NOW
+      // NOW+00:00:10
+      if (s[0] !== 'NOW'){
+        addTime = self.addTime(now, s[0].substr(4));
+      }
+    }else{
+      // +00:20
+      if (s[0][0] === '+'){
+        addTime = lastTime+self.addTime((lastTime*1000)+now, s[0].substr(1));
+      }
+      // 15:00
+      else{
+        addTime = self.addTime(now, s[0], true);
+      }
+    }
+
+    lastTime = addTime;
+
+    return [addTime, parsed_ops];
+  });
+
+  this.emit('parsed', self.sequence);
 };
 
 /**
@@ -102,10 +103,10 @@ Sbagen.prototype.play = function(){
 	var self = this;
 	self.emit('play');
 	self.playing = true;
-	self.timers = self.sequence.map(function(seq, i){
+	self.timers = self.sequence.map(function(op, i){
 		return setTimeout(function(){
-			self.emit('change', seq, i, self.sequence);
-		}, seq[0]);
+			self.emit('op', op[1], op[0], i, self.sequence);
+		}, op[0]*1000);
 	});
 };
 
@@ -114,7 +115,10 @@ Sbagen.prototype.play = function(){
  * @return {[type]} [description]
  */
 Sbagen.prototype.stop = function(){
-	this.emit('stop');
-	this.playing = false;
+	var self = this;
+	self.emit('stop');
+	self.playing = false;
+  self.timers.forEach(function(timer){
+    clearTimeout(timer);
+  });
 };
-

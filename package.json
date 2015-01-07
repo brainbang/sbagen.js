@@ -20,7 +20,8 @@
   "main": "Sbagen.js",
   "scripts": {
     "start": "browserify . --standalone sbagen -o dist/sbagen.js && uglifyjs dist/sbagen.js -o dist/sbagen.min.js",
-    "test": "mocha"
+    "test": "mocha -s 5000 -t 5000",
+    "watch": "mocha -w -s 1000 -t 6000"
   },
   "bin": {
     "sbagenjs": "cli.js"

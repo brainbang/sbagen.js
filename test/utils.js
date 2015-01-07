@@ -6,7 +6,7 @@ var removeBlank = require('../utils/removeBlank.js');
 var test = ['', 1, 2, 0, ' ', 'hello', 'hello ', ' hello'];
 
 describe('utils', function(){
-  describe('removeBlank', function(){
+  describe('removeBlank()', function(){
   	var tested = test.filter(removeBlank);
   	
   	it('filtered output should be an array', function(){
@@ -18,7 +18,7 @@ describe('utils', function(){
     });
   });
 
-  describe('trimArray', function(){
+  describe('trimArray()', function(){
   	var tested = test.map(trimArray);
   	
   	it('mapped output should be an array', function(){
