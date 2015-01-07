@@ -11,3 +11,4 @@ an sbagen work-alike for HTML5, nodejs, & CLI that uses an event-system so you c
 - [ ] add support for missing sbagen opcodes (`bell`, `wave`-stuff, `spin`, etc)
 - [ ] add support for blocks
 - [ ] add suport for original CLI-options (CLI, in-program, & as options to constructor)
+- [ ] [isochronic tone](http://en.wikipedia.org/wiki/Isochronic_tones) op
