@@ -41,12 +41,12 @@ Sbagen.prototype.addTime = function(time, add, startOfDay){
 
 /**
  * Parse sbagen file with time offsets
- * TODO: not complete parsing of sbagen. no cli-options, mix, bell, spin or wave or blocks 
+ * TODO: not complete parsing of sbagen. no cli-options or blocks 
  * @param  {String} sbagen [description]
  */
 Sbagen.prototype.parse = function(){
   var self = this;
-  var code = this.sbagen.replace(/##.+/g, '').split(/[\n\r]/).map(trimArray);
+  var code = this.sbagen.replace(/##.+/g, '').split(/[\n\r]/).map(trimArray).filter(removeBlank);
   var ops = {};
   var seq = [];
 
