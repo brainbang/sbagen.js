@@ -1,8 +1,9 @@
 {
   "name": "sbagen",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "brainwave synchronization library patterned after sbagen",
   "author": "David Konsumer <konsumer@jetboystudio.com>",
+  "license":"GPL2",
   "keywords": [
     "brainwave",
     "idoser",

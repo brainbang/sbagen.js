@@ -86,10 +86,9 @@ Sbagen.prototype.parse = function(){
       // 15:00
       else{
         addTime = self.addTime(now, s[0], true);
+        lastTime = addTime;
       }
     }
-
-    lastTime = addTime;
 
     return [addTime, parsed_ops];
   });
