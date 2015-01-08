@@ -104,7 +104,7 @@ describe('Sbagen', function(){
         '+00:00:01 test2',    // 1
         'NOW+00:00:02 test3', // 2
         '+00:00:01 test4',    // 3
-        '+00:00:01 test5'     // 4
+        '+00:00:01 test5'     // 3
       ].join('\n');
 
     // make a new sequencer with 1 callback

@@ -73,6 +73,7 @@ Sbagen.prototype.parse = function(){
 
     if (s[0].indexOf('NOW') === 0){
       addTime = 0;
+      lastTime = 0;
       // NOW
       // NOW+00:00:10
       if (s[0] !== 'NOW'){
