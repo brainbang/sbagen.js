@@ -1,136 +1,76 @@
 var EventEmitter = require('events').EventEmitter;
-
-var trimArray = require('./utils/trimArray.js');
-var removeBlank = require('./utils/removeBlank.js');
+var stripComments = require('./utils/stripComments.js');
 
 var Sbagen = module.exports = function(sbagen){
-	this.sbagen = sbagen;
-  this.timers = [];
-  this.sequece = [];
+  this.sbagen = sbagen;
 };
 
 Sbagen.prototype = EventEmitter.prototype;
 
 /**
- * get offset time from `time`
- * @param {Number} time        Time to start with (datestamp in ms)
- * @param {String} add         Future time (HH:MM:SS or HH:MM)
- * @param {Boolean} startOfDay Is `add` a daytime or offset from `time`?
- * @return {Number}            The seconds offset
+ * Translate an offset time to ms
+ * @param  {String} time the offset time, like 00:01:00 or 02:00
+ * @return {Number}      the offset in ms
  */
-Sbagen.prototype.addTime = function(time, add, startOfDay){
-  //console.log('starting with ' + new Date(time) + ' adding ' + add);
-  var out;
-	if (add.length === 5) add = add + ':00';
-	var t = add.split(':').map(Number);
-  var offset = (t[0] * 3600000) + (t[1] * 60000) + (t[2] * 1000);
-	if (startOfDay){
-    var d = new Date(time); d.setHours(0); d.setMinutes(0); d.setSeconds(0);
-    var newTime = offset + d.getTime();
-    if (newTime >= time){
-      out=Math.floor((newTime-time) / 1000);
-    }else{
-      out=Math.floor(((newTime-time) + (8.64e+7) ) / 1000);
-    }
-	}else{
-		out=Math.floor(offset / 1000);
-	}
-  //console.log('got', out);
-  return out;
+Sbagen.prototype.offsetToMs = function(time){
+  if (time.length === 5) time = time + ':00';
+  var t = time.split(':').map(Number);
+  return (t[2] * 1000) +
+    (t[1] * 60000) +
+    (t[0] * 3600000);
 };
 
 /**
- * Parse sbagen file with time offsets
- * TODO: not complete parsing of sbagen. no cli-options or blocks 
- * @param  {String} sbagen [description]
+ * Convert time-of-day to ms timestamp
+ * @param  {String} time the time of day, like 00:01:00 or 02:00
+ * @return {Number}      Timestamp of when this should happen
  */
-Sbagen.prototype.parse = function(){
-  var self = this;
-  var code = this.sbagen.replace(/##.+/g, '').split(/[\n\r]/).map(trimArray).filter(removeBlank);
-  var ops = {};
-  var seq = [];
+Sbagen.prototype.timeToMs = function(time){
+  var now = new Date();
+  var midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  var t = this.offsetToMs(time);
+  var newTime = midnight + t;
+  return (newTime > now.getTime()) ? newTime : newTime + 86400000;
+};
 
-  // pull out ops & seq
-  for (var c in code){
-    if (code[c].search(/.+: /) === 0){
-      var op = code[c].split(/[: ]/).map(trimArray);
-      ops[ op[0] ] = op.slice(1).filter(removeBlank);
-    }else if(code[c] !== ''){
-      seq.push(code[c].split(' ').map(trimArray).filter(removeBlank));
-    }
+/**
+ * Parse sbagen sequence & turn it into events
+ * @param  {String} sba the sequence source
+ */
+Sbagen.prototype.parse = function(sba){
+  var self = this;
+  var sequence = [];
+  sba = stripComments(sba||self.sbagen);
+  var m;
+  var ops = {};
+  
+  var re = /([a-z][a-z0-9]+)\s?:\s?(.+)/ig;
+  while ((m = re.exec(sba)) !== null) {
+    ops[ m[1] ] = m[2].split(' ');
   }
 
-  var now = (new Date()).getTime();
-  var lastTime = 0;
-
-  self.sequence = seq.map(function(s){
-    var addTime = 0;
-
-    var parsed_ops=[];
-    s.slice(1).forEach(function(op){
-      parsed_ops=parsed_ops.concat(ops[op] ? ops[op] : op);
-    });
-
-    if (s[0].indexOf('NOW') === 0){
-      addTime = 0;
-      lastTime = 0;
-      // NOW
-      // NOW+00:00:10
-      if (s[0] !== 'NOW'){
-        addTime = self.addTime(now, s[0].substr(4));
+  var n = new Date();
+  n.setMilliseconds(0);
+  var now = n.getTime();
+  var last = now + 0;
+  re = /([NOW\+0-9:]{3,12}) +(.+)/g;
+  while ((m = re.exec(sba)) !== null) {
+    var time = null;
+    if (m[1].indexOf('NOW') === 0){
+      if (m[1] === 'NOW'){
+        time = now;
+        last = now + 0;
+      }else{ // NOW+00:00:00
+        time = now + self.offsetToMs(m[1].substr(4));
       }
     }else{
-      // +00:20
-      if (s[0][0] === '+'){
-        addTime = lastTime+self.addTime((lastTime*1000)+now, s[0].substr(1));
-      }
-      // 15:00
-      else{
-        addTime = self.addTime(now, s[0], true);
-        lastTime = addTime;
+      if (m[1][0] === '+'){ // +00:00:00
+        time = last + self.offsetToMs(m[1].substr(1));
+      }else{ // 00:00:00
+        time = self.timeToMs(m[1]);
       }
     }
-
-    return [addTime, parsed_ops];
-  });
-
-  this.emit('parsed', self.sequence);
-};
-
-/**
- * Clear all sequencer timers
- * @return {[type]} [description]
- */
-Sbagen.prototype.clear = function(){
-  this.timers.forEach(function(timer){
-    clearTimeout(timer);
-  });
-  this.timers = [];
-};
-
-/**
- * Playback this.sequence as emits at proper time
- * @return {[type]} [description]
- */
-Sbagen.prototype.play = function(){
-	var self = this;
-  self.clear();
-	self.emit('play');
-	self.playing = true;
-	self.timers = self.sequence.map(function(op, i){
-		return setTimeout(function(){
-			self.emit('op', op[1], op[0], i, self.sequence);
-		}, op[0]*1000);
-	});
-};
-
-/**
- * Stop playback of this.sequence
- * @return {[type]} [description]
- */
-Sbagen.prototype.stop = function(){
-	var self = this;
-	self.emit('stop');
-	self.playing = false;
-  self.clear();
+    sequence.push([time-now, ops[m[2]] ]);
+  }
+  // TODO: create sequence of all fades
 };

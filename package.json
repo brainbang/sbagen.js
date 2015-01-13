@@ -3,7 +3,7 @@
   "version": "0.0.3",
   "description": "brainwave synchronization library patterned after sbagen",
   "author": "David Konsumer <konsumer@jetboystudio.com>",
-  "license":"GPL2",
+  "license": "GPL2",
   "keywords": [
     "brainwave",
     "idoser",
@@ -31,9 +31,11 @@
     "browserify": "^8.0.3",
     "chai": "^1.10.0",
     "mocha": "^2.1.0",
+    "multiline": "^1.0.1",
     "uglify-js": "^2.4.16"
   },
   "dependencies": {
-    "commander": "^2.6.0"
+    "commander": "^2.6.0",
+    "moment": "^2.9.0"
   }
 }

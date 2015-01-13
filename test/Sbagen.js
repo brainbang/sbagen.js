@@ -1,190 +1,84 @@
-var assert = require('chai').assert;
+var expect = require('chai').expect;
+var ml = require('multiline');
+
+var testSequence = ml(function(){/*
+test1: pink/10 pink/20 pink/30
+test2: mix/20
+test3: 400+10/10
+test4: 440/20
+test5: bell+480/20
+test6: spin:100+10/20
+test7: wave1:400+10/10
+off: -
+
+NOW test1
+ +00:00:01 test2
++00:00:02 test3
++00:00:03 test4
+NOW+00:00:04 test5
++00:00:05 test6
++00:00:06 test7
++00:00:07 off
+*/});
 
 var Sbagen = require('..');
 
 describe('Sbagen', function(){
   it('should instantiate without sbagen code', function(){
     var test = new Sbagen();
-  });
-
-  describe('addTime()', function(){
-    // lunchtime on my birthday
-    var time = (new Date(1977, 1, 21, 12)).getTime();
-    var test = new Sbagen();
-
-    it('should be able to add relative for second-based time', function(){
-      var t = test.addTime(time, '01:05:01');
-      var expected = new Date(1977, 1, 21, 13, 5, 1); // 13:05:01
-      assert.equal((expected.getTime()-time)/1000, t);
-    });
-
-    it('should be able to add relative for minute-based time', function(){
-      var t = test.addTime(time, '01:03');
-      var expected = new Date(1977, 1, 21, 13, 3); // 13:03:00
-      assert.equal((expected.getTime()-time)/1000, t);
-    });
-
-    it('should be able to add time-of-day for second-based time', function(){
-      var t = test.addTime(time, '12:01:01', true);
-      var expected = new Date(1977, 1, 21, 12, 1, 1); // 12:01:01
-      assert.equal((expected.getTime()-time)/1000, t);
-    });
-
-    it('should be able to add time-of-day for minute-based time', function(){
-      var t = test.addTime(time, '12:08', true);
-      var expected = new Date(1977, 1, 21, 12, 8); // 12:08:00
-      assert.equal((expected.getTime()-time)/1000, t);
-    });
-
-    it('should know when it should be the next day', function(){
-      var t = test.addTime(time, '01:08', true);
-      var expected = new Date(1977, 1, 22, 1, 8); // 01:08, next day
-      assert.equal((expected.getTime()-time)/1000, t);
-    });
-  });
-
-  describe('parse()', function(){
-    var simplecode = [
-        '## simple tester',
-        '',
-        'test11: pink/40 150+6/30',
-        'test12: pink/40 100+1.5/30 200-4/27 400+8/1.5',
-        'test13: -',
-        '',
-        'NOW test11',             // 0
-        'NOW test12',             // 0
-        '+00:03:30 == test13 ->', // 03:30
-        'NOW+04:00 <> test11',
-        '+12:00 test12'
-      ].join('\n');
-
-    it('should emit `parsed` event', function(done){
-      var test = new Sbagen(simplecode);
-      test.on('parsed', function(){ done(); });
-      test.parse();
-    });
-
-    it('should handle times', function(done){
-      var test = new Sbagen(simplecode);
-      test.on('parsed', function(seq){
-        assert.equal(0, seq[0][0]);
-        assert.equal(0, seq[1][0]);
-        assert.equal(210, seq[2][0]);
-        assert.equal(14400, seq[3][0]);
-        assert.equal(57600, seq[4][0]);
-        done();
-      });
-      test.parse();
-    });
-
-    it('should handle ops', function(done){
-      var test = new Sbagen(simplecode);
-      test.on('parsed', function(seq){
-        assert.equal('pink/40|150+6/30', seq[0][1].join('|'));
-        assert.equal('pink/40|100+1.5/30|200-4/27|400+8/1.5', seq[1][1].join('|'));
-
-        assert.equal('==|-|->', seq[2][1].join('|'));
-        assert.equal('<>|pink/40|150+6/30', seq[3][1].join('|'));
-        assert.equal('pink/40|100+1.5/30|200-4/27|400+8/1.5', seq[4][1].join('|'));
-
-        done();
-      });
-      test.parse();
-    });
+    expect(test).to.be.instanceOf(Sbagen);
   });
   
-  describe('sequencer', function(){
-    var seqcode = [
-        'test1: pink/10',
-        'test2: pink/20',
-        'test3: pink/30',
-        'test4: pink/40',
-        'test5: pink/50',
-        'NOW test1',          // 0
-        '+00:00:01 test2',    // 1
-        'NOW+00:00:02 test3', // 2
-        '+00:00:01 test4',    // 3
-        '+00:00:01 test5'     // 3
-      ].join('\n');
+  describe('.offsetToMs()', function(){
+    var test;
 
-    // make a new sequencer with 1 callback
-    function setup(cb){
-      var test = new Sbagen(seqcode);
-      test.parse();
-      var start = (new Date()).getTime();
-      test.on('op', function(op,time,i,seq){
-        cb(op,time,i,seq,Math.floor(((new Date()).getTime()-start)/1000));
-      });
-      test.play();
-      return test;
-    }
-
-    it('should handle `NOW test1`', function(done){
-      setup(function(op,time,i,seq,elapsed){
-        if (i===0){
-          if (op[0]==='pink/10' && elapsed===0 && elapsed===time){
-            done();
-          }else{
-            done(new Error('test1 took ' + elapsed + ' but should have taken 0 ('+time+')'));
-          }
-        }
-      });
-    });
-   
-    it('should handle `+00:00:01 test2`', function(done){
-      setup(function(op,time,i,seq,elapsed){
-        if (i===1){
-          if (op[0]==='pink/20' && elapsed===1 && elapsed===time){
-            done();
-          }else{
-            done(new Error('test2 took ' + elapsed + ' but should have taken 1 ('+time+')'));
-          }
-        }
-      });
+    before(function(){
+      test = new Sbagen();
     });
 
-    it('should handle `NOW+00:00:02 test3`', function(done){
-      setup(function(op,time,i,seq,elapsed){
-        if (i===2){
-          if (op[0]==='pink/30' && elapsed===2 && elapsed===time){
-            done();
-          }else{
-            done(new Error('test3 took ' + elapsed + ' but should have taken 2 ('+time+')'));
-          }
-        }
-      });
+    it('should handle 00:01', function(){
+      expect(test.offsetToMs('00:01')).to.be.equal(60000);
     });
 
-    it('should handle `+00:00:01 test4`', function(done){
-      setup(function(op,time,i,seq,elapsed){
-        if (i===3){
-          // console.log('test4', elapsed, time);
-
-          if (op[0]==='pink/40' && elapsed===3 && elapsed===time){
-            done();
-          }else{
-            done(new Error('test4 took ' + elapsed + ' but should have taken 3 ('+time+')'));
-          }
-        }
-      });
+    it('should handle 00:05', function(){
+      expect(test.offsetToMs('00:05')).to.be.equal(300000);
     });
 
-    it('should allow sequencer stop', function(done){
-      var test = setup(function(op,time,i,seq,elapsed){
-        if (i > 2){
-          done(Error('extra op called after stop'));
-        }
-      });
-
-      // stop sequencer in 2 seconds
-      setTimeout(function(){
-        test.stop();
-      },2000);
-
-      // mark done in 5 seconds
-      setTimeout(function(){
-        done();
-      },5000);
+    it('should handle 00:01:00', function(){
+      expect(test.offsetToMs('00:01:00')).to.be.equal(60000);
     });
+
+    it('should handle 15:01:00', function(){
+      expect(test.offsetToMs('15:01:00')).to.be.equal(54060000);
+    });
+  });
+
+  describe('.timeToMs()', function(){
+    var test;
+
+    before(function(){
+      test = new Sbagen();
+    });
+
+    it('should handle 00:01', function(){
+      var d = new Date();
+      d.setMilliseconds(0);
+      d.setSeconds(0);
+      d.setMinutes(1);
+      d.setHours(0);
+      d.setDate(d.getDate() + 1);
+      expect(test.timeToMs('00:01')).to.be.equal(d.getTime());
+    });
+
+    it('should handle 00:05:00', function(){
+      var d = new Date();
+      d.setMilliseconds(0);
+      d.setSeconds(0);
+      d.setMinutes(5);
+      d.setHours(0);
+      d.setDate(d.getDate() + 1);
+      expect(test.timeToMs('00:05:00')).to.be.equal(d.getTime());
+    });
+    
   });
 });
