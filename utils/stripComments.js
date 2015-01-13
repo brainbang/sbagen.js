@@ -1,7 +1,15 @@
 var stripComments =  module.exports = (function () {
-  var re1 = /^\s+|\s+$/g;
-  var re2 = /\s*#.+$/g;
+  var re = /^\s?#.+$/gm; 
   return function (s) {
-    return s.replace(re1,'').replace(re2,'');
+    return s
+    	.replace(re, '')
+    	.split('\n')
+    	.filter(function(l){
+    		return (l !== '');
+    	})
+    	.map(function(l){
+    		return l.trim();
+    	})
+    	.join('\n');
   };
 }());
