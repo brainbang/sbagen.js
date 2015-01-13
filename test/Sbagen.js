@@ -2,6 +2,8 @@ var expect = require('chai').expect;
 var ml = require('multiline');
 
 var testSequence = ml(function(){/*
+## simple demo
+
 test1: pink/10 pink/20 pink/30
 test2: mix/20
 test3: 400+10/10
@@ -24,7 +26,7 @@ NOW+00:00:04 test5
 var Sbagen = require('..');
 
 describe('Sbagen', function(){
-  it('should instantiate without sbagen code', function(){
+  it('should instantiate', function(){
     var test = new Sbagen();
     expect(test).to.be.instanceOf(Sbagen);
   });
@@ -37,19 +39,19 @@ describe('Sbagen', function(){
     });
 
     it('should handle 00:01', function(){
-      expect(test.offsetToMs('00:01')).to.be.equal(60000);
+      expect(test.offsetToMs('00:01')).to.equal(60000);
     });
 
     it('should handle 00:05', function(){
-      expect(test.offsetToMs('00:05')).to.be.equal(300000);
+      expect(test.offsetToMs('00:05')).to.equal(300000);
     });
 
     it('should handle 00:01:00', function(){
-      expect(test.offsetToMs('00:01:00')).to.be.equal(60000);
+      expect(test.offsetToMs('00:01:00')).to.equal(60000);
     });
 
     it('should handle 15:01:00', function(){
-      expect(test.offsetToMs('15:01:00')).to.be.equal(54060000);
+      expect(test.offsetToMs('15:01:00')).to.equal(54060000);
     });
   });
 
@@ -67,7 +69,7 @@ describe('Sbagen', function(){
       d.setMinutes(1);
       d.setHours(0);
       d.setDate(d.getDate() + 1);
-      expect(test.timeToMs('00:01')).to.be.equal(d.getTime());
+      expect(test.timeToMs('00:01')).to.equal(d.getTime());
     });
 
     it('should handle 00:05:00', function(){
@@ -77,8 +79,43 @@ describe('Sbagen', function(){
       d.setMinutes(5);
       d.setHours(0);
       d.setDate(d.getDate() + 1);
-      expect(test.timeToMs('00:05:00')).to.be.equal(d.getTime());
+      expect(test.timeToMs('00:05:00')).to.equal(d.getTime());
     });
-    
   });
+
+  describe('.parse()', function(){
+    var test, seqeunce;
+
+    before(function(){
+      test = new Sbagen();
+      sequence = test.parse(testSequence);
+    });
+
+    it('should create the sequence array, correctly', function(){
+      expect(sequence[0][0]).to.equal(0);
+      expect(sequence[0][1]).to.have.members(['pink/10', 'pink/20', 'pink/30']);
+
+      expect(sequence[1][0]).to.equal(1000);
+      expect(sequence[1][1]).to.have.members(['mix/20']);
+
+      expect(sequence[2][0]).to.equal(2000);
+      expect(sequence[2][1]).to.have.members(['400+10/10']);
+
+      expect(sequence[3][0]).to.equal(3000);
+      expect(sequence[3][1]).to.have.members(['440/20']);
+
+      expect(sequence[4][0]).to.equal(4000);
+      expect(sequence[4][1]).to.have.members(['bell+480/20']);
+
+      expect(sequence[5][0]).to.equal(5000);
+      expect(sequence[5][1]).to.have.members(['spin:100+10/20']);
+
+      expect(sequence[6][0]).to.equal(6000);
+      expect(sequence[6][1]).to.have.members(['wave1:400+10/10']);
+
+      expect(sequence[7][0]).to.equal(7000);
+      expect(sequence[7][1]).to.have.members(['-']);
+    });
+  });
+
 });

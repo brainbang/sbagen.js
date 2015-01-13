@@ -1,8 +1,7 @@
 var EventEmitter = require('events').EventEmitter;
 var stripComments = require('./utils/stripComments.js');
 
-var Sbagen = module.exports = function(sbagen){
-  this.sbagen = sbagen;
+var Sbagen = module.exports = function(){
 };
 
 Sbagen.prototype = EventEmitter.prototype;
@@ -34,13 +33,15 @@ Sbagen.prototype.timeToMs = function(time){
 };
 
 /**
- * Parse sbagen sequence & turn it into events
- * @param  {String} sba the sequence source
+ * Create base op-sequence keyed by timecodes from sbagen sequence
+ * @param  {String} sba raw sbagen sequence
+ * @return {Array}      op-sequence keyed by timecodes
  */
 Sbagen.prototype.parse = function(sba){
   var self = this;
   var sequence = [];
-  sba = stripComments(sba||self.sbagen);
+  if(sba) self.sbagen = sba;
+  sba = stripComments(self.sbagen);
   var m;
   var ops = {};
   
@@ -72,5 +73,6 @@ Sbagen.prototype.parse = function(sba){
     }
     sequence.push([time-now, ops[m[2]] ]);
   }
-  // TODO: create sequence of all fades
+  return sequence;
 };
+
