@@ -1,7 +1,10 @@
 var EventEmitter = require('events').EventEmitter;
 var stripComments = require('./utils/stripComments.js');
 
-var Sbagen = module.exports = function(){
+var Sbagen = module.exports = function(sba){
+  if (sba){
+    this.parse(sba);
+  }
 };
 
 Sbagen.prototype = EventEmitter.prototype;
@@ -39,7 +42,9 @@ Sbagen.prototype.timeToMs = function(time){
  */
 Sbagen.prototype.parse = function(sba){
   var self = this;
-  var sequence = [];
+  self.sequence = [];
+  self.timers = [];
+  self.stop();
   if(sba) self.sbagen = sba;
   sba = stripComments(self.sbagen);
   var m;
@@ -71,8 +76,40 @@ Sbagen.prototype.parse = function(sba){
         time = self.timeToMs(m[1]);
       }
     }
-    sequence.push([time-now, ops[m[2]] ]);
+    self.sequence.push([time-now, ops[m[2]] ]);
   }
-  return sequence;
+};
+
+/**
+ * Playback this.sequence as emits at proper time
+ */
+Sbagen.prototype.play = function(){
+  var self = this;
+  self.clear();
+  self.playing = true;
+  self.timers = self.sequence.map(function(op, i){
+    return setTimeout(function(){
+      self.emit('op', op[1], op[0], i, self.sequence);
+    }, op[0]);
+  });
+};
+
+/**
+ * Stop playback of this.sequence
+ */
+Sbagen.prototype.stop = function(){
+  var self = this;
+  self.playing = false;
+  self.clear();
+};
+
+/**
+ * Clear all sequencer timers
+ */
+Sbagen.prototype.clear = function(){
+  this.timers.forEach(function(timer){
+    clearTimeout(timer);
+  });
+  this.timers = [];
 };
 
