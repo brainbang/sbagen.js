@@ -85,15 +85,19 @@ describe('Sbagen', function(){
   });
 
   describe('sequencer', function(){
-    var clock, test;
+    var clock, test, timeCheck, timeElapsed = 0;
     
-    before(function () {
+    beforeEach(function () {
       clock = sinon.useFakeTimers();
       test = new Sbagen(testSequence);
+      timeCheck = setInterval(function(){
+        timeElapsed += 1000;
+      }, 1000);
     });
 
-    after(function () {
+    afterEach(function () {
       clock.restore();
+      clearInterval(timeCheck);
     });
 
     it('should create the sequence array', function(){
@@ -101,11 +105,6 @@ describe('Sbagen', function(){
     });
 
     it('should fire correct op events', function(){
-      var timeElapsed = 0;
-      var timeCheck = setInterval(function(){
-        timeElapsed += 1000;
-      }, 1000);
-
       test.on('op', function(ops, time, index){
         var seq;
         switch(index){
@@ -120,6 +119,15 @@ describe('Sbagen', function(){
         }
         expect(ops).to.have.members(seq);
         expect(timeElapsed).to.equal(time);
+      });
+
+      test.play();
+      clock.tick(86400000); // a day has passed
+    });
+
+    it('should fire correct val events', function(){
+      test.on('val', function(value, op, time, index){
+        console.log(value, op);
       });
 
       test.play();

@@ -87,10 +87,21 @@ Sbagen.prototype.play = function(){
   var self = this;
   self.clear();
   self.playing = true;
+  
+  // add top-level ops
   self.timers = self.sequence.map(function(op, i){
     return setTimeout(function(){
       self.emit('op', op[1], op[0], i, self.sequence);
     }, op[0]);
+  });
+
+  // for every op, sequence the fades for the next one
+  self.sequence.forEach(function(op, i){
+    if (!self.sequence[i+1]) return;
+    // default fade is 30 secs before & after
+    var volFadeIn = 30000;
+    var volFadeOut = 30000;
+    var fadeType = '--';
   });
 };
 
