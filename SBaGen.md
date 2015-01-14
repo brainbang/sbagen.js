@@ -50,7 +50,7 @@ Contents of this document:
   5. [Compensating for headphone low frequency roll-off](#compensating-for-headphone-low-frequency-roll-off)
   6. [The `drop` sequences](#the-drop-sequences)
     1. [More detailed notes on `-p drop` options](#more-detailed-notes-on--p-drop-options)
-    2. [Adjusting the length of a `-p drop` session](#adjusting-the-length-of-a---p-drop-session)
+    2. [Adjusting the length of a `-p drop` session](#adjusting-the-length-of-a--p-drop-session)
   7. [The `slide` sequences](#the-slide-sequences)
 5. [Writing sequence files](#writing-sequence-files)
   1. [The sequence-file format](#the-sequence-file-format)
