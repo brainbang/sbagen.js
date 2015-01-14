@@ -4,6 +4,8 @@ var sinon = require('sinon');
 var ml = require('multiline');
 var testSequence = ml(function(){/*
 ## simple demo
+# secret comment 1
+# secret comment 2
 
 test1: pink/10 pink/20 pink/30
 test2: mix/20
@@ -15,7 +17,7 @@ test7: wave1:400+10/10
 off: -
 
 NOW test1
- +00:01:00 test2
+ +00:01:00 == test2 ->
 +00:02:00 test3
 +00:03:00 test4
 NOW+00:04:00 test5
@@ -84,6 +86,13 @@ describe('Sbagen', function(){
     });
   });
 
+  describe('#comments()', function(){
+    it('should do comments', function(){
+      var test = new Sbagen(testSequence);
+      expect(test.comments()).to.have.members(['simple demo']);
+    });
+  });
+
   describe('sequencer', function(){
     var clock, test, timeCheck, timeElapsed = 0;
     
@@ -98,6 +107,15 @@ describe('Sbagen', function(){
     afterEach(function () {
       clock.restore();
       clearInterval(timeCheck);
+    });
+
+    it('fire comments event', function(done){
+      var test = new Sbagen(testSequence);
+      test.on('comments', function(comments){
+        expect(comments).to.have.members(['simple demo']);
+        done();
+      });
+      test.play();
     });
 
     it('should create the sequence array', function(){

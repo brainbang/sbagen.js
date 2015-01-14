@@ -1,5 +1,5 @@
 var stripComments =  module.exports = (function () {
-  var re = /^\s?#.+$/gm; 
+  var re = /^\s?#.+$/gm;
   return function (s) {
     return s
     	.replace(re, '')

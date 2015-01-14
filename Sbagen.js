@@ -3,11 +3,22 @@ var stripComments = require('./utils/stripComments.js');
 
 var Sbagen = module.exports = function(sba){
   if (sba){
+    if(sba) this.sbagen = sba;
     this.parse(sba);
   }
 };
 
 Sbagen.prototype = EventEmitter.prototype;
+
+Sbagen.prototype.comments = function(){
+  var re = /^\s?##(.+)$/gm;
+  var m;
+  var out=[];
+  while ((m = re.exec(this.sbagen)) !== null) {
+    out.push(m[1]);
+  }
+  return out.map(function(l){ return l.trim(); });
+};
 
 /**
  * Translate an offset time to ms
@@ -90,10 +101,14 @@ Sbagen.prototype.play = function(){
   
   // add top-level ops
   self.timers = self.sequence.map(function(op, i){
-    return setTimeout(function(){
-      self.emit('op', op[1], op[0], i, self.sequence);
-    }, op[0]);
+    if(op[1]){
+      return setTimeout(function(){
+        self.emit('op', op[1], op[0], i, self.sequence);
+      }, op[0]);
+    }
   });
+
+  self.emit('comments', self.comments()); 
 
   // for every op, sequence the fades for the next one
   self.sequence.forEach(function(op, i){
