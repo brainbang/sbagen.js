@@ -41,7 +41,7 @@ Contents of this document:
   1. [Installation for Windows users](#installation-for-windows-users)
   2. [Installation for Mac OS X users](#installation-for-mac-os-x-users)
   3. [Installation for Linux and other UNIX users](#installation-for-linux-and-other-unix-users)
-4. [Invocation](#Invocation)
+4. [Invocation](#invocation-all-platforms)
   1. [Outputting to a pipe or a file](#outputting-to-a-pipe-or-a-file)
   2. [Mixing in background sounds](#mixing-in-background-sounds)
   3. [Standard background sounds](#standard-background-sounds)
@@ -49,8 +49,8 @@ Contents of this document:
     1. [Using ReplayGain with OGG files](#using-replaygain-with-ogg-files)
   5. [Compensating for headphone low frequency roll-off](#compensating-for-headphone-low-frequency-roll-off)
   6. [The `drop` sequences](#the-drop-sequences)
-    1. [More detailed notes on `-p drop` options](#more-detailed-notes-on-p-drop-options)
-    2. [Adjusting the length of a `-p drop` session](#adjusting-the-length-of-a-drop-session)
+    1. [More detailed notes on `-p drop` options](#more-detailed-notes-on--p-drop-options)
+    2. [Adjusting the length of a `-p drop` session](#adjusting-the-length-of-a---p-drop-session)
   7. [The `slide` sequences](#the-slide-sequences)
 5. [Writing sequence files](#writing-sequence-files)
   1. [The sequence-file format](#the-sequence-file-format)
@@ -60,7 +60,7 @@ Contents of this document:
     4. [Block definition lines](#block-definition-lines)
   2. [Multiple sequence files](#multiple-sequence-files)
 6. [Conclusion](#conclusion)
-7. [Appendix: User-defined waveforms](#appendix-user-defined-waveforms)
+7. [Appendix: User-defined waveforms](#appendix-a-user-defined-waveforms)
 
 
 ## Legal notice
