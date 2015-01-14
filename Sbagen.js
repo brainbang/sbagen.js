@@ -10,6 +10,10 @@ var Sbagen = module.exports = function(sba){
 
 Sbagen.prototype = EventEmitter.prototype;
 
+/**
+ * Get comments that have ## which denotes they should be outputted
+ * @return {[type]} [description]
+ */
 Sbagen.prototype.comments = function(){
   var re = /^\s?##(.+)$/gm;
   var m;
@@ -61,16 +65,24 @@ Sbagen.prototype.parse = function(sba){
   var m;
   var ops = {};
   
+  function mapOp(o){
+    return ops[o] ? ops[o] : o;
+  }
+
+  function filterEmpty(o){
+    return (o && o !== '');
+  }
+
   var re = /([a-z][a-z0-9]+)\s?:\s?(.+)/ig;
   while ((m = re.exec(sba)) !== null) {
-    ops[ m[1] ] = m[2].split(' ');
+    ops[ m[1] ] = m[2].split(/\s+/).filter(filterEmpty);
   }
 
   var n = new Date();
   n.setMilliseconds(0);
   var now = n.getTime();
   var last = now + 0;
-  re = /([NOW\+0-9:]{3,12}) +(.+)/g;
+  re = /^(NOW|\+?[0-9]{2}:[0-9]{2}:[0-9]{2}|\+?[0-9]{2}:[0-9]{2})\s+(.+)$/igm;
   while ((m = re.exec(sba)) !== null) {
     var time = null;
     if (m[1].indexOf('NOW') === 0){
@@ -87,8 +99,15 @@ Sbagen.prototype.parse = function(sba){
         time = self.timeToMs(m[1]);
       }
     }
-    self.sequence.push([time-now, ops[m[2]] ]);
+    self.sequence.push([ time-now, m[2].split(/\s+/).map(mapOp) ]);
   }
+  
+  self.sequence = self.sequence.map(function(o){
+    if (typeof o[1][0] !== 'string'){
+      o[1].unshift('--');
+    }
+    return o;
+  });
 };
 
 /**
@@ -103,21 +122,40 @@ Sbagen.prototype.play = function(){
   self.timers = self.sequence.map(function(op, i){
     if(op[1]){
       return setTimeout(function(){
-        self.emit('op', op[1], op[0], i, self.sequence);
+        // ops, fadeInOut, fullTimeFade, time, index
+        self.emit('op', op[1][1], op[1][0], (op[1][2] && op[1][2] === '->'), op[0], i);
       }, op[0]);
     }
   });
 
-  self.emit('comments', self.comments()); 
+  // add fades
+  self.on('op', function(ops, fadeInOut, fullTimeFade, time, index){
+    switch(fadeInOut[0]){
+      case '-':
+        // Fade from previous to this, fading out all tones not continuing, fading in all new tones, and adjusting the amplitude of any tones continuing.
+        break;
+      case '<':
+        // Fade in from silence.
+        break;
+      case '=':
+        // Slide from previous to this, fading out all tones ending, fading in all new tones, and sliding the frequency and adjusting the amplitude of all other tones.
+        break;
+    }
 
-  // for every op, sequence the fades for the next one
-  self.sequence.forEach(function(op, i){
-    if (!self.sequence[i+1]) return;
-    // default fade is 30 secs before & after
-    var volFadeIn = 30000;
-    var volFadeOut = 30000;
-    var fadeType = '--';
+    switch(fadeInOut[1]){
+      case '-':
+        // Fade to next, as above
+        break;
+      case '>':
+        // Fade out to silence
+        break;
+      case '=':
+        // Slide to next, as above
+        break;
+    }
   });
+
+  self.emit('comments', self.comments());
 };
 
 /**

@@ -3,27 +3,24 @@ var sinon = require('sinon');
 
 var ml = require('multiline');
 var testSequence = ml(function(){/*
-## simple demo
-# secret comment 1
-# secret comment 2
+## Alpha
+# this comment should not be outputted.
 
-test1: pink/10 pink/20 pink/30
-test2: mix/20
-test3: 400+10/10
-test4: 440/20
-test5: bell+480/20
-test6: spin:100+10/20
-test7: wave1:400+10/10
-off: -
+h8:   pink/50 100+8/50
+h10:  pink/50 100+10/50
+h12:  pink/50 200+12/50
+h13:  pink/50 400+13/50
+alloff:      -
 
-NOW test1
- +00:01:00 == test2 ->
-+00:02:00 test3
-+00:03:00 test4
-NOW+00:04:00 test5
-+00:05:00 test6
-+00:06:00 test7
-+00:07:00 off
+NOW       h8
++00:05:00 h8 ->
++00:06:00 h10
++00:13:00 h10 ->
++00:14:00 h12
++00:22:00 h12 ->
++00:23:00 h13
++00:28:00 h13 ->
++00:30:00 alloff
 */});
 
 var Sbagen = require('..');
@@ -89,7 +86,7 @@ describe('Sbagen', function(){
   describe('#comments()', function(){
     it('should do comments', function(){
       var test = new Sbagen(testSequence);
-      expect(test.comments()).to.have.members(['simple demo']);
+      expect(test.comments()).to.have.members(['Alpha']);
     });
   });
 
@@ -112,45 +109,36 @@ describe('Sbagen', function(){
     it('fire comments event', function(done){
       var test = new Sbagen(testSequence);
       test.on('comments', function(comments){
-        expect(comments).to.have.members(['simple demo']);
+        expect(comments).to.have.members(['Alpha']);
         done();
       });
       test.play();
     });
 
     it('should create the sequence array', function(){
-      expect(test.sequence.length).to.equal(8);
+      expect(test.sequence.length).to.equal(9);
     });
-
+    
     it('should fire correct op events', function(){
-      test.on('op', function(ops, time, index){
+      test.on('op', function(ops, fadeInOut, fullTimeFade, time, index){
         var seq;
         switch(index){
-          case 0: seq = ['pink/10', 'pink/20', 'pink/30']; break;
-          case 1: seq = ['mix/20']; break;
-          case 2: seq = ['400+10/10']; break;
-          case 3: seq = ['440/20']; break;
-          case 4: seq = ['bell+480/20']; break;
-          case 5: seq = ['spin:100+10/20']; break;
-          case 6: seq = ['wave1:400+10/10']; break;
-          case 7: seq = ['-']; break;
+          case 0: seq = [ 'pink/50', '100+8/50' ]; break;
+          case 1: seq = [ 'pink/50', '100+8/50' ]; break;
+          case 2: seq = [ 'pink/50', '100+10/50' ]; break;
+          case 3: seq = [ 'pink/50', '100+10/50' ]; break;
+          case 4: seq = [ 'pink/50', '200+12/50' ]; break;
+          case 5: seq = [ 'pink/50', '200+12/50' ]; break;
+          case 6: seq = [ 'pink/50', '400+13/50' ]; break;
+          case 7: seq = [ 'pink/50', '400+13/50' ]; break;
+          case 8: seq = [ '-' ]; break;
         }
         expect(ops).to.have.members(seq);
         expect(timeElapsed).to.equal(time);
       });
 
       test.play();
-      clock.tick(86400000); // a day has passed
-    });
-
-    it('should fire correct val events', function(){
-      test.on('val', function(value, op, time, index){
-        console.log(value, op);
-      });
-
-      test.play();
-      clock.tick(86400000); // a day has passed
+      clock.tick(1.86e+6); // 31 minutes has passed
     });
   });
-
 });
