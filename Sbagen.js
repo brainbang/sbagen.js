@@ -1,9 +1,24 @@
 var EventEmitter = require('events').EventEmitter;
-var stripComments = require('./utils/stripComments.js');
 
 function isNumeric(n) {
   return !isNaN(parseFloat(n)) && isFinite(n);
 }
+
+var stripComments =  module.exports = (function () {
+  var re = /^\s?#.+$/gm;
+  return function (s) {
+    return s
+      .replace(re, '')
+      .split('\n')
+      .filter(function(l){
+        return (l !== '');
+      })
+      .map(function(l){
+        return l.trim();
+      })
+      .join('\n');
+  };
+}());
 
 var Sbagen = module.exports = function(sba){
   if (sba){
