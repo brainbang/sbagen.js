@@ -9,7 +9,8 @@ var testSequence = ml(function(){/*
 h8:   pink/50 100+8/50
 h10:  pink/50 100+10/50
 h12:  pink/50 200+12/50
-h13:  pink/50 400+13/50
+h13:  pink/50 400/50
+h14:  mix/50 400+10/50
 alloff:      -
 
 NOW       h8

@@ -1,6 +1,10 @@
 var EventEmitter = require('events').EventEmitter;
 var stripComments = require('./utils/stripComments.js');
 
+function isNumeric(n) {
+  return !isNaN(parseFloat(n)) && isFinite(n);
+}
+
 var Sbagen = module.exports = function(sba){
   if (sba){
     if(sba) this.sbagen = sba;
@@ -64,50 +68,60 @@ Sbagen.prototype.parse = function(sba){
   sba = stripComments(self.sbagen);
   var m;
   var ops = {};
-  
-  function mapOp(o){
-    return ops[o] ? ops[o] : o;
-  }
 
-  function filterEmpty(o){
-    return (o && o !== '');
-  }
+  // TODO: this should probably be refactored for simplicity, but it hits all the cases.
 
+  // get op-name & op-text: https://regex101.com/r/fT9hG4/1
   var re = /([a-z][a-z0-9]+)\s?:\s?(.+)/ig;
+
+  // extract ops: https://regex101.com/r/oS7zD3/1
+  var re2 = /\s*(([0-9]+)([\+-])?([0-9]+)|pink|mix|(bell)([\+-])([0-9]+)|(spin):([0-9]+)([\+\-])([0-9]+)|(wave)([0-9]+):([0-9]+)([\+\-])([0-9]+))\/([0-9]{1,3})|(-)\s?$/gm;
+
   while ((m = re.exec(sba)) !== null) {
-    ops[ m[1] ] = m[2].split(/\s+/).filter(filterEmpty);
+    if (m.index === re.lastIndex) {
+        re.lastIndex++;
+    }
+    
+    // console.log(m);
+
+    ops[m[1]] = [];
+
+    while ((m2 = re2.exec(m[2])) !== null) {
+      if (m2.index === re2.lastIndex) {
+        re2.lastIndex++;
+      }
+      m2 = m2.filter(function(o){
+        return o !== undefined;
+      });
+
+      var newOp = {};
+
+      if (m2.length ===2){ // -
+        newOp.op = '-';
+        newOp.amp = 0;
+      }else{
+        newOp.amp = Number(m2.pop());
+        if (m2.length == 2){ // pink, mix
+          newOp.op = m2[1];
+        }else{
+          if (isNumeric(m2[2]) ){
+            newOp.op = 'sin';
+
+            if (m2.length === 5){ // 400+10
+              newOp.offset = Number(m2.pop());
+              newOp.offset = newOp.offset * (m2.pop() + 1);
+              newOp.frequency = Number(m2.pop());
+            }else{ // 400
+              newOp.offset = 0;
+              newOp.freqency = Number(m2[1]);
+            }
+          }
+        }
+      }
+      ops[m[1]].push(newOp);
+    }
   }
 
-  var n = new Date();
-  n.setMilliseconds(0);
-  var now = n.getTime();
-  var last = now + 0;
-  re = /^(NOW|\+?[0-9]{2}:[0-9]{2}:[0-9]{2}|\+?[0-9]{2}:[0-9]{2})\s+(.+)$/igm;
-  while ((m = re.exec(sba)) !== null) {
-    var time = null;
-    if (m[1].indexOf('NOW') === 0){
-      if (m[1] === 'NOW'){
-        time = now;
-        last = now + 0;
-      }else{ // NOW+00:00:00
-        time = now + self.offsetToMs(m[1].substr(4));
-      }
-    }else{
-      if (m[1][0] === '+'){ // +00:00:00
-        time = last + self.offsetToMs(m[1].substr(1));
-      }else{ // 00:00:00
-        time = self.timeToMs(m[1]);
-      }
-    }
-    self.sequence.push([ time-now, m[2].split(/\s+/).map(mapOp) ]);
-  }
-  
-  self.sequence = self.sequence.map(function(o){
-    if (typeof o[1][0] !== 'string'){
-      o[1].unshift('--');
-    }
-    return o;
-  });
 };
 
 /**
@@ -128,31 +142,11 @@ Sbagen.prototype.play = function(){
     }
   });
 
-  // add fades
-  self.on('op', function(ops, fadeInOut, fullTimeFade, time, index){
-    switch(fadeInOut[0]){
-      case '-':
-        // Fade from previous to this, fading out all tones not continuing, fading in all new tones, and adjusting the amplitude of any tones continuing.
-        break;
-      case '<':
-        // Fade in from silence.
-        break;
-      case '=':
-        // Slide from previous to this, fading out all tones ending, fading in all new tones, and sliding the frequency and adjusting the amplitude of all other tones.
-        break;
-    }
-
-    switch(fadeInOut[1]){
-      case '-':
-        // Fade to next, as above
-        break;
-      case '>':
-        // Fade out to silence
-        break;
-      case '=':
-        // Slide to next, as above
-        break;
-    }
+  // add fade intervals
+  self.sequence.forEach(function(op, i){
+    if (i === 0) return;
+    console.log(op);
+    
   });
 
   self.emit('comments', self.comments());
