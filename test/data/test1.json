@@ -1,0 +1,92 @@
+[
+  {
+    "time": 0,
+    "ops": [
+      {
+        "op": "pink",
+        "amp": 10
+      },
+      {
+        "op": "pink",
+        "amp": 20
+      },
+      {
+        "op": "pink",
+        "amp": 30
+      }
+    ]
+  },
+  {
+    "time": 1000,
+    "ops": [
+      {
+        "op": "mix",
+        "amp": 20
+      }
+    ]
+  },
+  {
+    "time": 2000,
+    "ops": [
+      {
+        "op": "sin",
+        "amp": 10,
+        "freq": 400,
+        "offset": 10
+      }
+    ]
+  },
+  {
+    "time": 3000,
+    "ops": [
+      {
+        "op": "sin",
+        "amp": 20,
+        "freq": 440,
+        "offset": 0
+      }
+    ]
+  },
+  {
+    "time": 4000,
+    "ops": [
+      {
+        "op": "bell",
+        "amp": 20,
+        "freq": 480
+      }
+    ]
+  },
+  {
+    "time": 5000,
+    "ops": [
+      {
+        "op": "spin",
+        "amp": 20,
+        "freq": 100,
+        "offset": 10
+      }
+    ]
+  },
+  {
+    "time": 6000,
+    "ops": [
+      {
+        "op": "wave",
+        "num": 1,
+        "amp": 10,
+        "freq": 400,
+        "offset": 10
+      }
+    ]
+  },
+  {
+    "time": 7000,
+    "ops": [
+      {
+        "op": "-",
+        "amp": 0
+      }
+    ]
+  }
+]

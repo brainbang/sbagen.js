@@ -1,6 +1,6 @@
 {
   "name": "sbagen",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "brainwave synchronization library patterned after sbagen",
   "author": "David Konsumer <konsumer@jetboystudio.com>",
   "license": "GPL2",
@@ -18,7 +18,7 @@
     "url": "http://github.com/brainbang/sbagen.js/issues",
     "email": "konsumer@jetboystudio.com"
   },
-  "main": "Sbagen.js",
+  "main": "index.js",
   "scripts": {
     "start": "browserify . --standalone sbagen -o dist/sbagen.js && uglifyjs dist/sbagen.js -o dist/sbagen.min.js",
     "test": "mocha -s 5000 -t 5000",
@@ -30,13 +30,14 @@
   "devDependencies": {
     "browserify": "^8.0.3",
     "chai": "^1.10.0",
+    "chai-things": "^0.2.0",
     "mocha": "^2.1.0",
-    "multiline": "^1.0.1",
     "sinon": "^1.12.2",
     "uglify-js": "^2.4.16"
   },
   "dependencies": {
     "commander": "^2.6.0",
+    "emitonoff": "0.0.2",
     "moment": "^2.9.0"
   }
 }

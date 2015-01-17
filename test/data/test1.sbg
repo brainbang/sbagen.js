@@ -1,0 +1,20 @@
+## tester
+# test1 should cover all of the ops
+
+test1: pink/10 pink/20 pink/30
+test2: mix/20
+test3: 400+10/10
+test4: 440/20
+test5: bell+480/20
+test6: spin:100+10/20
+test7: wave1:400+10/10
+off: -
+
+NOW test1
++00:00:01 test2
++00:00:02 test3
++00:00:03 test4
++00:00:04 test5
++00:00:05 test6
++00:00:06 test7
++00:00:07 off

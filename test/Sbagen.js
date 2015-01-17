@@ -1,68 +1,38 @@
-var expect = require('chai').expect;
+var fs = require('fs');
+var chai = require('chai');
+var expect = chai.expect;
 var sinon = require('sinon');
+chai.use(require('chai-things'));
 
-var ml = require('multiline');
-var testSequence = ml(function(){/*
-## Alpha
-# this comment should not be outputted.
+var testData = {
+  test1: {
+    sequence: fs.readFileSync(__dirname + '/data/test1.sbg').toString(),
+    expected: require(__dirname + '/data/test1.json')
+  }
+};
 
-h8:   pink/50 100+8/50
-h10:  pink/50 100+10/50
-h12:  pink/50 200+12/50
-h13:  pink/50 400/50
-h14:  mix/50 400+10/50
-alloff:      -
+var sbagen = require('..');
 
-NOW       h8
-+00:05:00 h8 ->
-+00:06:00 h10
-+00:13:00 h10 ->
-+00:14:00 h12
-+00:22:00 h12 ->
-+00:23:00 h13
-+00:28:00 h13 ->
-+00:30:00 alloff
-*/});
-
-var Sbagen = require('..');
-
-describe('Sbagen', function(){
-  it('should instantiate', function(){
-    var test = new Sbagen();
-    expect(test).to.be.instanceOf(Sbagen);
-  });
-  
-  describe('#offsetToMs()', function(){
-    var test;
-
-    before(function(){
-      test = new Sbagen();
-    });
-
+describe('Sbagen', function(){  
+  describe('.offsetToMs()', function(){
     it('should handle 00:01', function(){
-      expect(test.offsetToMs('00:01')).to.equal(60000);
+      expect(sbagen.offsetToMs('00:01')).to.equal(60000);
     });
 
     it('should handle 00:05', function(){
-      expect(test.offsetToMs('00:05')).to.equal(300000);
+      expect(sbagen.offsetToMs('00:05')).to.equal(300000);
     });
 
     it('should handle 00:01:00', function(){
-      expect(test.offsetToMs('00:01:00')).to.equal(60000);
+      expect(sbagen.offsetToMs('00:01:00')).to.equal(60000);
     });
 
     it('should handle 15:01:00', function(){
-      expect(test.offsetToMs('15:01:00')).to.equal(54060000);
+      expect(sbagen.offsetToMs('15:01:00')).to.equal(54060000);
     });
   });
 
-  describe('#timeToMs()', function(){
-    var test;
-
-    before(function(){
-      test = new Sbagen();
-    });
-
+  describe('.timeToMs()', function(){
     it('should handle 00:01', function(){
       var d = new Date();
       d.setMilliseconds(0);
@@ -70,7 +40,7 @@ describe('Sbagen', function(){
       d.setMinutes(1);
       d.setHours(0);
       d.setDate(d.getDate() + 1);
-      expect(test.timeToMs('00:01')).to.equal(d.getTime());
+      expect(sbagen.timeToMs('00:01')).to.equal(d.getTime());
     });
 
     it('should handle 00:05:00', function(){
@@ -80,66 +50,138 @@ describe('Sbagen', function(){
       d.setMinutes(5);
       d.setHours(0);
       d.setDate(d.getDate() + 1);
-      expect(test.timeToMs('00:05:00')).to.equal(d.getTime());
+      expect(sbagen.timeToMs('00:05:00')).to.equal(d.getTime());
     });
   });
 
-  describe('#comments()', function(){
-    it('should do comments', function(){
-      var test = new Sbagen(testSequence);
-      expect(test.comments()).to.have.members(['Alpha']);
+  describe('.comments()', function(){
+    it('should handle displayable comments correctly', function(){
+      expect(sbagen.comments(testData.test1.sequence)).to.have.members(['tester']);
     });
   });
 
-  describe('sequencer', function(){
-    var clock, test, timeCheck, timeElapsed = 0;
+  describe('.parse()', function(){
+    it('should parse the sequence correctly', function(){
+      var sequence = sbagen.parse(testData.test1.sequence);
+      testData.test1.expected.forEach(function(line){
+        expect(sequence).to.include.something.that.deep.equals(line);
+      });
+    });
+  });
+
+  describe('.animate()', function(){
+    var clock;
     
     beforeEach(function () {
       clock = sinon.useFakeTimers();
-      test = new Sbagen(testSequence);
-      timeCheck = setInterval(function(){
-        timeElapsed += 1000;
-      }, 1000);
     });
 
     afterEach(function () {
       clock.restore();
-      clearInterval(timeCheck);
     });
 
-    it('fire comments event', function(done){
-      var test = new Sbagen(testSequence);
-      test.on('comments', function(comments){
-        expect(comments).to.have.members(['Alpha']);
-        done();
-      });
-      test.play();
+    it('should animate positive values', function(){
+      var elapsedMinutes = 0;
+      var runCount = 0;
+      function cb(val){
+        var now = new Date();
+        elapsedMinutes = now.getMinutes();
+        runCount++;
+      }
+
+      sbagen.animate(1, 100, 1800000, cb);
+      clock.tick(3600000); // 1 hour has passed
+      expect(elapsedMinutes).to.equal(30);
+      expect(runCount).to.equal(100);
     });
 
-    it('should create the sequence array', function(){
-      expect(test.sequence.length).to.equal(9);
+    it('should animate negative values', function(){
+      var elapsedMinutes = 0;
+      var runCount = 0;
+      function cb(val){
+        var now = new Date();
+        elapsedMinutes = now.getMinutes();
+        runCount++;
+      }
+
+      sbagen.animate(100, 1, 1800000, cb);
+      clock.tick(3600000); // 1 hour has passed
+      expect(elapsedMinutes).to.equal(30);
+      expect(runCount).to.equal(100);
     });
+  });
+
+  describe('.play()', function(done){
+    var clock;
     
-    it('should fire correct op events', function(){
-      test.on('op', function(ops, fadeInOut, fullTimeFade, time, index){
-        var seq;
-        switch(index){
-          case 0: seq = [ 'pink/50', '100+8/50' ]; break;
-          case 1: seq = [ 'pink/50', '100+8/50' ]; break;
-          case 2: seq = [ 'pink/50', '100+10/50' ]; break;
-          case 3: seq = [ 'pink/50', '100+10/50' ]; break;
-          case 4: seq = [ 'pink/50', '200+12/50' ]; break;
-          case 5: seq = [ 'pink/50', '200+12/50' ]; break;
-          case 6: seq = [ 'pink/50', '400+13/50' ]; break;
-          case 7: seq = [ 'pink/50', '400+13/50' ]; break;
-          case 8: seq = [ '-' ]; break;
-        }
-        expect(ops).to.have.members(seq);
-        expect(timeElapsed).to.equal(time);
-      });
+    beforeEach(function () {
+      clock = sinon.useFakeTimers();
+    });
 
-      test.play();
+    afterEach(function () {
+      clock.restore();
+    });
+
+    it('should fire comments event', function(){
+      var comments = null;
+      
+      function handleComments(c){
+        comments = c;
+      }
+      
+      sbagen.on('comments', handleComments);
+      sbagen.play(testData.test1.sequence);
+      expect(comments).to.have.members(['tester']);
+      sbagen.off('comments', handleComments);
+    });
+
+    it('should fire play event', function(){
+      var played = false;
+      function handlePlay(){
+        played = true;
+      }
+      sbagen.on('play', handlePlay);
+      sbagen.play(testData.test1.sequence);
+      sbagen.off('play', handlePlay);
+      expect(played).to.be.ok();
+    });
+
+    it('should fire op events', function(){
+      var firedOps = [];
+      
+      function handleOp(op){
+        var now = new Date();
+        if (op.time === (now.getSeconds()*1000) && op.time === testData.test1.expected[op.index].time){
+          firedOps.push(op.index);
+          for (var i in op.ops){
+            expect(op.ops).to.include.something.that.deep.equals(testData.test1.expected[op.index].ops[i]);
+          }
+        }
+      }
+      
+      sbagen.on('op', handleOp);
+      sbagen.play(testData.test1.sequence);
+      clock.tick(1.86e+6); // 31 minutes has passed
+      sbagen.off('op', handleOp);
+      
+      expect(firedOps).to.have.members([0,1,2,3,4,5,6,7]);
+    });
+
+    /*
+    it('should fire freq and amp events', function(){
+      function handleFreq(freq, channel, op){
+        console.log('freq', freq, channel, op);
+      }
+      
+      function handleAmp(amp, channel, op){
+        console.log('amp', amp, channel, op);
+      }
+
+      sbagen.on('freq', handleFreq);
+      sbagen.on('amp', handleAmp);
+      sbagen.play(testData.test1.sequence);
       clock.tick(1.86e+6); // 31 minutes has passed
     });
+    */
   });
 });
