@@ -1,6 +1,8 @@
 [
   {
     "time": 0,
+    "fadeTime": 60000,
+    "fadeType": "--",
     "ops": [
       {
         "op": "pink",
@@ -18,6 +20,8 @@
   },
   {
     "time": 1000,
+    "fadeTime": 60000,
+    "fadeType": "--",
     "ops": [
       {
         "op": "mix",
@@ -27,61 +31,73 @@
   },
   {
     "time": 2000,
+    "fadeTime": 60000,
+    "fadeType": "--",
     "ops": [
       {
         "op": "sin",
         "amp": 10,
-        "freq": 400,
-        "offset": 10
+        "carrier": 400,
+        "freq": 10
       }
     ]
   },
   {
     "time": 3000,
+    "fadeTime": 60000,
+    "fadeType": "--",
     "ops": [
       {
         "op": "sin",
         "amp": 20,
-        "freq": 440,
-        "offset": 0
+        "carrier": 440,
+        "freq": 0
       }
     ]
   },
   {
     "time": 4000,
+    "fadeTime": 60000,
+    "fadeType": "--",
     "ops": [
       {
         "op": "bell",
         "amp": 20,
-        "freq": 480
+        "carrier": 480
       }
     ]
   },
   {
     "time": 5000,
+    "fadeTime": 60000,
+    "fadeType": "--",
     "ops": [
       {
         "op": "spin",
         "amp": 20,
-        "freq": 100,
-        "offset": 10
+        "carrier": 100,
+        "freq": 10
       }
     ]
   },
   {
     "time": 6000,
+    "fadeTime": 60000,
+    "fadeType": "--",
     "ops": [
       {
         "op": "wave",
         "num": 1,
         "amp": 10,
-        "freq": 400,
-        "offset": 10
+        "carrier": 400,
+        "freq": 10
       }
     ]
   },
   {
     "time": 7000,
+    "fadeTime": 60000,
+    "fadeType": "--",
     "ops": [
       {
         "op": "-",

@@ -1,0 +1,149 @@
+[
+  {
+    "time": 0,
+    "fadeTime": 60000,
+    "fadeType": "--",
+    "ops": [
+      {
+        "op": "pink",
+        "amp": 50
+      },
+      {
+        "op": "sin",
+        "amp": 50,
+        "carrier": 100,
+        "freq": 8
+      }
+    ]
+  },
+  {
+    "time": 300000,
+    "fadeTime": 300000,
+    "fadeType": "--",
+    "ops": [
+      {
+        "op": "pink",
+        "amp": 50
+      },
+      {
+        "op": "sin",
+        "amp": 50,
+        "carrier": 100,
+        "freq": 8
+      }
+    ]
+  },
+  {
+    "time": 360000,
+    "fadeTime": 60000,
+    "fadeType": "--",
+    "ops": [
+      {
+        "op": "pink",
+        "amp": 50
+      },
+      {
+        "op": "sin",
+        "amp": 50,
+        "carrier": 100,
+        "freq": 10
+      }
+    ]
+  },
+  {
+    "time": 780000,
+    "fadeTime": 780000,
+    "fadeType": "--",
+    "ops": [
+      {
+        "op": "pink",
+        "amp": 50
+      },
+      {
+        "op": "sin",
+        "amp": 50,
+        "carrier": 100,
+        "freq": 10
+      }
+    ]
+  },
+  {
+    "time": 840000,
+    "fadeTime": 60000,
+    "fadeType": "--",
+    "ops": [
+      {
+        "op": "pink",
+        "amp": 50
+      },
+      {
+        "op": "sin",
+        "amp": 50,
+        "carrier": 200,
+        "freq": 12
+      }
+    ]
+  },
+  {
+    "time": 1320000,
+    "fadeTime": 1320000,
+    "fadeType": "--",
+    "ops": [
+      {
+        "op": "pink",
+        "amp": 50
+      },
+      {
+        "op": "sin",
+        "amp": 50,
+        "carrier": 200,
+        "freq": 12
+      }
+    ]
+  },
+  {
+    "time": 1380000,
+    "fadeTime": 60000,
+    "fadeType": "--",
+    "ops": [
+      {
+        "op": "pink",
+        "amp": 50
+      },
+      {
+        "op": "sin",
+        "amp": 50,
+        "carrier": 400,
+        "freq": 13
+      }
+    ]
+  },
+  {
+    "time": 1680000,
+    "fadeTime": 1680000,
+    "fadeType": "--",
+    "ops": [
+      {
+        "op": "pink",
+        "amp": 50
+      },
+      {
+        "op": "sin",
+        "amp": 50,
+        "carrier": 400,
+        "freq": 13
+      }
+    ]
+  },
+  {
+    "time": 1800000,
+    "fadeTime": 60000,
+    "fadeType": "--",
+    "ops": [
+      {
+        "op": "-",
+        "amp": 0
+      }
+    ]
+  }
+]

@@ -18,8 +18,8 @@ var regexes = {
   // https://regex101.com/r/bA9zV2/1
   extractOps : /\s*(([0-9]+)([\+-])?([0-9]+)|pink|mix|(bell)([\+-])([0-9]+)|(spin):([0-9]+)([\+\-])([0-9]+)|(wave)([0-9]+):([0-9]+)([\+\-])([0-9]+))\/([0-9]{1,3})|(-)\s?$/gm,
 
-  // https://regex101.com/r/kI6oD1/1
-  sequence : /(NOW|\+?[0-9]{2}:[0-9]{2}:?[0-9]{0,2})\s+(.+)/gm,
+  // https://regex101.com/r/iI6rG9/1
+  sequence : /(NOW|\+?[0-9]{2}:[0-9]{2}:?[0-9]{0,2})\s+([\-=<]?[\-=>]?)\s?([a-z][a-z0-9_-]+)\s?(-?>?)/igm,
 
   stripComments : /^\s?#.+$/gm,
 
@@ -127,30 +127,30 @@ sbagen.parse = function(sba){
       }else if (m2.length === 5){ // non-binaurl sin
         newOp.op = 'sin';
           newOp.amp = Number(m2[4]);
-          newOp.freq = Number(m2[1]);
-          newOp.offset = 0;
+          newOp.carrier = Number(m2[1]);
+          newOp.freq = 0;
       }else if (m2.length === 6){ // bell or binaural sin
         if (m2[2] === 'bell'){
           newOp.op = 'bell';
           newOp.amp = Number(m2[5]);
-          newOp.freq = Number(m2[4]);
+          newOp.carrier = Number(m2[4]);
         }else{
           newOp.op = 'sin';
           newOp.amp = Number(m2[5]);
-          newOp.freq = Number(m2[2]);
-          newOp.offset = Number(m2[4]) * (m2[3] + '1');
+          newOp.carrier = Number(m2[2]);
+          newOp.freq = Number(m2[4]) * (m2[3] + '1');
         }
       }else if (m2.length === 7){ // spin
         newOp.op = 'spin';
         newOp.amp = Number(m2[6]);
-        newOp.freq = Number(m2[3]);
-        newOp.offset = Number(m2[5]) * (m2[4] + '1');
+        newOp.carrier = Number(m2[3]);
+        newOp.freq = Number(m2[5]) * (m2[4] + '1');
       }else if (m2.length === 8){ // wave
         newOp.op = 'wave';
         newOp.num = Number(m2[3]);
         newOp.amp = Number(m2[7]);
-        newOp.freq = Number(m2[4]);
-        newOp.offset = Number(m2[6]) * (m2[5] + '1');
+        newOp.carrier = Number(m2[4]);
+        newOp.freq = Number(m2[6]) * (m2[5] + '1');
       }else{
         newOp.op = 'unknown';
         newOp.info = m2;
@@ -164,13 +164,18 @@ sbagen.parse = function(sba){
     if (m3.index === regexes.sequence.lastIndex) {
       regexes.sequence.lastIndex++;
     }
-    sequence.push({
-      time: (m3[1] === 'NOW') ? 0 : (m3[1][0] === '+') ? sbagen.offsetToMs(m3[1].substr(1)) : sbagen.timeToMs(m3[1]),
-      ops: ops[ m3[2] ]
-    });
-  }
 
-  // TODO: deal with transitions: -=><
+    var seq = {
+      time: (m3[1] === 'NOW') ? 0 : (m3[1][0] === '+') ? sbagen.offsetToMs(m3[1].substr(1)) : sbagen.timeToMs(m3[1]),
+    };
+
+    seq.fadeTime = (m3[4] === '->') ? seq.time : 60000; // 1 minute
+    seq.fadeType = (m3[2] === '') ? '--' : m3[2];
+
+    seq.ops = ops[ m3[3] ];
+
+    sequence.push(seq);
+  }
 
   return sequence;
 };
@@ -202,32 +207,26 @@ sbagen.play = function(sba){
   playing = true;
   sbagen.emit('play');
 
+  // timers that fire on action time to inform UI, etc
   sequence.forEach(function(action, index){
     action.index = index;
-
     timers.push(setTimeout(function(){
       sbagen.emit('op', action);
-      
-      if (index !== (sequence.length-1)){
-        var actionNext = sequence[index+1];
-        action.ops.forEach(function(op, channel){
-          var opNext = sequence[index+1].ops[channel];
-          // TODO: no special transition
-          if (op && opNext){
-            if (opNext.amp && op.amp && opNext.amp != op.amp){
-              sbagen.animate(op.amp, opNext.amp, (actionNext.time-action.time), function(amp){
-                sbagen.emit('amp', amp, channel, op);
-              });
-            }
-            if (opNext.freq && op.freq && opNext.freq != op.freq){
-              sbagen.animate(op.freq, opNext.freq, (actionNext.time-action.time), function(freq){
-                sbagen.emit('freq', freq, channel, op);
-              });
-            }
-          }
-        });
-      }
     }, action.time));
+
+    if (index !== (sequence.length-1)){
+      var actionNext = sequence[ index+1 ];
+      action.ops.forEach(function(op,channel){
+        if (actionNext.ops[channel] && op.amp !== actionNext.ops[channel].amp){
+          timers.push(setTimeout(function(){
+            // TODO: need to handle correct action.fadeType -=<>
+            sbagen.animate(op.amp, actionNext.ops[channel].amp, action.fadeTime, function(amp){
+              sbagen.emit('amp', amp, op, channel, action, actionNext);
+            });
+          }, action.fadeTime/2));
+        }
+      });
+    }
   });
 };
 
@@ -243,6 +242,7 @@ sbagen.stop = function(){
   intervals.forEach(function(interval){
     clearInterval(interval);
   });
+  timers = [];
   intervals = [];
 };
 

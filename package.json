@@ -37,7 +37,6 @@
   },
   "dependencies": {
     "commander": "^2.6.0",
-    "emitonoff": "0.0.2",
-    "moment": "^2.9.0"
+    "emitonoff": "0.0.2"
   }
 }

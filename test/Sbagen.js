@@ -4,13 +4,6 @@ var expect = chai.expect;
 var sinon = require('sinon');
 chai.use(require('chai-things'));
 
-var testData = {
-  test1: {
-    sequence: fs.readFileSync(__dirname + '/data/test1.sbg').toString(),
-    expected: require(__dirname + '/data/test1.json')
-  }
-};
-
 var sbagen = require('..');
 
 describe('Sbagen', function(){  
@@ -51,21 +44,6 @@ describe('Sbagen', function(){
       d.setHours(0);
       d.setDate(d.getDate() + 1);
       expect(sbagen.timeToMs('00:05:00')).to.equal(d.getTime());
-    });
-  });
-
-  describe('.comments()', function(){
-    it('should handle displayable comments correctly', function(){
-      expect(sbagen.comments(testData.test1.sequence)).to.have.members(['tester']);
-    });
-  });
-
-  describe('.parse()', function(){
-    it('should parse the sequence correctly', function(){
-      var sequence = sbagen.parse(testData.test1.sequence);
-      testData.test1.expected.forEach(function(line){
-        expect(sequence).to.include.something.that.deep.equals(line);
-      });
     });
   });
 
@@ -112,7 +90,97 @@ describe('Sbagen', function(){
   });
 
   describe('.play()', function(done){
-    var clock;
+    var clock, testData;
+
+    /**
+     * Ensure play event was fired correctly
+     * @param  {Object} testData[pattern] set from above testData
+     */
+    function testPlay(pattern){
+      var played = false;
+      function handlePlay(){
+        played = true;
+      }
+      sbagen.on('play', handlePlay);
+      sbagen.play(testData[pattern].sequence);
+      sbagen.off('play', handlePlay);
+      expect(played).to.be.ok();
+    }
+
+    /**
+     * Ensure comment event was fired correctly
+     * @param  {Object} testData[pattern] set from above testData
+     */
+    function testComments(pattern){
+      var comments = null;
+
+      function handleComments(c){
+        comments = c;
+      }
+
+      sbagen.on('comments', handleComments);
+      sbagen.play(testData[pattern].sequence);
+      expect(comments).to.have.members(testData[pattern].comments);
+      sbagen.off('comments', handleComments);
+    }
+
+    function testChange(pattern){
+      var firedOps = 0;
+      var start = (new Date()).getTime();
+      var callCountAmp = [];
+      for (i=0;i<testData[pattern].expected.length;i++){
+        callCountAmp.push(0);
+      }
+      callCountFreq = callCountAmp.slice();
+      
+      // TODO: actually check these values
+      function handleAmp(amp, op, channel, action, actionNext){
+        callCountAmp[action.index]++;
+      }
+
+      function handleFreq(freq, op, channel, action, actionNext){
+        callCountFreq[action.index]++;
+      }
+
+      function handleOp(op){
+        var now = (new Date()).getTime() - start;
+        if (op.time === now && op.time === testData[pattern].expected[op.index].time){
+          firedOps++;
+          for (var i in op.ops){
+            expect(op.ops).to.include.something.that.deep.equals(testData[pattern].expected[op.index].ops[i]);
+          }
+        }
+      }
+
+      sbagen.on('amp', handleAmp);
+      sbagen.on('freq', handleFreq);
+      sbagen.on('op', handleOp);
+      sbagen.play(testData[pattern].sequence);
+      clock.tick(3600000); // 1 hour has passed
+      sbagen.off('amp', handleAmp);
+      sbagen.off('freq', handleFreq);
+      sbagen.off('op', handleOp);
+      
+      return {
+        amp: callCountAmp,
+        freq: callCountFreq
+      };
+    }
+
+    before(function(){
+      testData = {
+        test1: {
+          sequence: fs.readFileSync(__dirname + '/data/test1.sbg').toString(),
+          expected: JSON.parse(fs.readFileSync(__dirname + '/data/test1.json')),
+          comments: JSON.parse(fs.readFileSync(__dirname + '/data/test1_comments.json'))
+        },
+        test2: {
+          sequence: fs.readFileSync(__dirname + '/data/test2.sbg').toString(),
+          expected: JSON.parse(fs.readFileSync(__dirname + '/data/test2.json')),
+          comments: JSON.parse(fs.readFileSync(__dirname + '/data/test2_comments.json'))
+        }
+      };
+    });
     
     beforeEach(function () {
       clock = sinon.useFakeTimers();
@@ -122,66 +190,33 @@ describe('Sbagen', function(){
       clock.restore();
     });
 
-    it('should fire comments event', function(){
-      var comments = null;
-      
-      function handleComments(c){
-        comments = c;
-      }
-      
-      sbagen.on('comments', handleComments);
-      sbagen.play(testData.test1.sequence);
-      expect(comments).to.have.members(['tester']);
-      sbagen.off('comments', handleComments);
+    it('should fire comments event: test1', function(){
+      testComments('test1');
     });
 
-    it('should fire play event', function(){
-      var played = false;
-      function handlePlay(){
-        played = true;
-      }
-      sbagen.on('play', handlePlay);
-      sbagen.play(testData.test1.sequence);
-      sbagen.off('play', handlePlay);
-      expect(played).to.be.ok();
+    it('should fire play event: test1', function(){
+      testPlay('test1');
     });
 
-    it('should fire op events', function(){
-      var firedOps = [];
-      
-      function handleOp(op){
-        var now = new Date();
-        if (op.time === (now.getSeconds()*1000) && op.time === testData.test1.expected[op.index].time){
-          firedOps.push(op.index);
-          for (var i in op.ops){
-            expect(op.ops).to.include.something.that.deep.equals(testData.test1.expected[op.index].ops[i]);
-          }
-        }
-      }
-      
-      sbagen.on('op', handleOp);
-      sbagen.play(testData.test1.sequence);
-      clock.tick(1.86e+6); // 31 minutes has passed
-      sbagen.off('op', handleOp);
-      
-      expect(firedOps).to.have.members([0,1,2,3,4,5,6,7]);
+    it('should fire op, amp & freq events: test1', function(){
+      var change = testChange('test1');
+      expect(change.amp).to.have.members([ 11, 11, 11, 0, 0, 11, 11, 0 ]);
+      // TODO: freq?
     });
 
-    /*
-    it('should fire freq and amp events', function(){
-      function handleFreq(freq, channel, op){
-        console.log('freq', freq, channel, op);
-      }
-      
-      function handleAmp(amp, channel, op){
-        console.log('amp', amp, channel, op);
-      }
-
-      sbagen.on('freq', handleFreq);
-      sbagen.on('amp', handleAmp);
-      sbagen.play(testData.test1.sequence);
-      clock.tick(1.86e+6); // 31 minutes has passed
+    it('should fire comments event: test2', function(){
+      testComments('test2');
     });
-    */
+
+    it('should fire play event: test2', function(){
+      testPlay('test2');
+    });
+
+    it('should fire op, amp & freq events: test2', function(){
+      var change = testChange('test2');
+      // TODO: check these values, I think this might be wrong
+      expect(change.amp).to.have.members([ 0, 0, 0, 0, 0, 0, 0, 51, 0 ]);
+      // TODO: freq?
+    });
   });
 });
